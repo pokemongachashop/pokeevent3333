@@ -22,19 +22,19 @@
   // 이 값은 웹 클라이언트용 "공개" 설정입니다. 데이터 보호는 Realtime Database 보안 규칙이 담당합니다.
   // 관리자 비밀키나 서비스 계정 키는 절대 이곳에 넣지 마세요.
   const FIREBASE_CONFIG = {
-    apiKey: '',
-    authDomain: '',
-    databaseURL: '', // 예: https://프로젝트ID-default-rtdb.asia-southeast1.firebasedatabase.app
-    projectId: '',
-    storageBucket: '',
-    messagingSenderId: '',
-    appId: '',
+    apiKey: "AIzaSyAvhL3w92y4SWaYhnJoPMHwuUayeoR9GWg",
+  authDomain: "pokeevent3333.firebaseapp.com",
+  databaseURL: "https://pokeevent3333-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "pokeevent3333",
+  storageBucket: "pokeevent3333.firebasestorage.app",
+  messagingSenderId: "637863519542",
+  appId: "1:637863519542:web:35bb72cfb4d48dcb09bf97"
   };
 
   // 관리자 계정 이메일. Firebase 콘솔 > Authentication > 사용자에서 이 이메일로 계정을 만들고 비밀번호를 정하세요.
   // 게임 화면에서는 비밀번호만 입력합니다. 보안 규칙(README 6번)에 적힌 이메일도 같은 값으로 바꿔야 합니다.
   // 방 만들기·맵 선택·경기 시작·재경기는 이 계정으로 로그인한 관리자만 할 수 있습니다.
-  const ADMIN_EMAIL = 'admin@pika-survival.app';
+  const ADMIN_EMAIL = 'pokepack1010@pika-survival.app';
 
   const CFG = {
     maxPlayers: 20,
