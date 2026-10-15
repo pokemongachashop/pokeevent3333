@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#231d44">
+<meta name="description" content="무너지는 발판 위에서 끝까지 살아남는 실시간 멀티플레이 파티 게임">
+<title>피카 서바이벌 · Pika Survival</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<noscript><p class="noscript">JavaScript를 켜야 플레이할 수 있습니다.</p></noscript>
+
+<div id="app">
+
+  <!-- ===================== 메인 화면 ===================== -->
+  <section id="screen-main" class="screen is-active" aria-labelledby="game-title">
+    <div class="main-card">
+      <div class="logo">
+        <canvas id="logo-mascot" width="168" height="168" aria-hidden="true"></canvas>
+        <div class="logo-text">
+          <h1 id="game-title">피카 서바이벌</h1>
+          <p class="subtitle">Pika Survival · 무너지는 발판 위 최후의 1인</p>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <span id="fb-status" class="pill pill-wait">Firebase 확인 중…</span>
+        <span id="room-status" class="pill">방 참가 전</span>
+      </div>
+
+      <label class="field" for="nickname">
+        <span>닉네임</span>
+        <input id="nickname" maxlength="12" autocomplete="off" placeholder="1~12자" enterkeyhint="done">
+      </label>
+
+      <button id="btn-create" class="btn btn-primary btn-block" type="button" hidden>방 만들기</button>
+
+      <div class="join-row">
+        <input id="room-code-input" maxlength="6" placeholder="방 코드 6자리" autocomplete="off"
+               autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-label="방 코드">
+        <button id="btn-join" class="btn" type="button">참가</button>
+      </div>
+      <p id="join-hint" class="note hint">방은 관리자가 만듭니다. 안내받은 방 코드로 참가하세요.</p>
+
+      <button id="btn-practice" class="btn btn-ghost btn-block" type="button">혼자 연습하기 (오프라인)</button>
+
+      <p id="main-error" class="error" role="alert" hidden></p>
+
+      <details id="admin-box" class="admin-box">
+        <summary>관리자</summary>
+        <div id="admin-login" class="admin-row">
+          <input id="admin-password" type="password" autocomplete="current-password" placeholder="관리자 비밀번호" aria-label="관리자 비밀번호">
+          <button id="btn-admin-login" class="btn" type="button">로그인</button>
+        </div>
+        <div id="admin-logged" class="admin-row" hidden>
+          <span class="pill pill-ok">관리자로 로그인됨</span>
+          <button id="btn-admin-logout" class="btn btn-small" type="button">로그아웃</button>
+        </div>
+      </details>
+
+      <details class="howto">
+        <summary>조작 방법과 규칙</summary>
+        <ul>
+          <li><b>PC</b> — WASD 또는 방향키로 이동, Space 점프, E 아이템 사용, Esc 메뉴</li>
+          <li><b>모바일</b> — 왼쪽 조이스틱으로 이동, 오른쪽 버튼으로 점프·아이템</li>
+          <li>빨갛게 흔들리는 발판은 잠시 뒤 사라집니다. 바깥으로 떨어지면 탈락!</li>
+          <li>마지막까지 살아남은 플레이어가 우승합니다. 캐릭터는 외형만 다르고 성능은 모두 같아요.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===================== 대기실 ===================== -->
+  <section id="screen-lobby" class="screen" aria-label="대기실">
+    <header class="lobby-head">
+      <div class="code-box">
+        <span class="label">방 코드</span>
+        <strong id="lobby-code">------</strong>
+        <button id="btn-copy" class="btn btn-small" type="button">복사</button>
+      </div>
+      <div class="lobby-meta">
+        <span id="lobby-count" class="pill">0 / 20</span>
+        <span id="lobby-conn" class="pill"></span>
+        <button id="btn-leave" class="btn btn-small btn-danger" type="button">나가기</button>
+      </div>
+    </header>
+
+    <div class="lobby-body">
+      <div class="panel players-panel">
+        <h2>참가자</h2>
+        <ul id="player-list" class="player-list"></ul>
+      </div>
+
+      <div class="panel setup-panel">
+        <h2>캐릭터 선택 <small>외형만 달라요</small></h2>
+        <div id="char-grid" class="char-grid" role="radiogroup" aria-label="캐릭터"></div>
+
+        <h2>맵 <small id="map-hint"></small></h2>
+        <div id="map-grid" class="map-grid" role="radiogroup" aria-label="맵"></div>
+
+        <div class="lobby-actions">
+          <button id="btn-ready" class="btn" type="button">준비 완료</button>
+          <button id="btn-start" class="btn btn-primary" type="button" disabled>경기 시작</button>
+        </div>
+        <p id="lobby-note" class="note"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 경기 화면 ===================== -->
+  <section id="screen-game" class="screen" aria-label="경기">
+    <div id="game-root"></div>
+
+    <div id="hud" class="hud">
+      <div class="hud-top">
+        <div class="hud-chip"><span class="k">남은 시간</span><b id="hud-time">0:00</b></div>
+        <div class="hud-chip"><span class="k">생존</span><b id="hud-alive">0</b></div>
+        <div class="hud-chip hud-stage"><b id="hud-stage">준비</b></div>
+        <span id="hud-conn" class="dot" title="연결 상태"></span>
+        <button id="btn-menu" class="hud-btn" type="button" aria-label="메뉴">☰</button>
+      </div>
+
+      <div id="hud-item" class="hud-item">
+        <canvas id="hud-item-icon" width="64" height="64"></canvas>
+        <span id="hud-item-label">아이템 없음</span>
+        <kbd class="pc-only">E</kbd>
+      </div>
+      <div id="hud-effects" class="hud-effects"></div>
+
+      <div id="countdown" class="countdown" hidden></div>
+      <div id="hud-banner" class="hud-banner" hidden></div>
+
+      <div id="spectate-bar" class="spectate" hidden>
+        <span class="spec-title">관전 중</span>
+        <button id="spec-prev" class="btn btn-small" type="button" aria-label="이전 플레이어">◀</button>
+        <span id="spec-name" class="spec-name">-</span>
+        <button id="spec-next" class="btn btn-small" type="button" aria-label="다음 플레이어">▶</button>
+        <button id="spec-all" class="btn btn-small" type="button">전체 보기</button>
+      </div>
+
+      <p class="hud-hint pc-only">WASD 이동 · Space 점프 · E 아이템 · Esc 메뉴</p>
+    </div>
+
+    <div id="touch-controls" class="touch-controls">
+      <div id="joystick" class="joystick"><div id="joystick-knob" class="knob"></div></div>
+      <div class="touch-buttons">
+        <button id="touch-item" class="touch-btn touch-item" type="button">
+          <canvas id="touch-item-icon" width="64" height="64"></canvas><span>아이템</span>
+        </button>
+        <button id="touch-jump" class="touch-btn touch-jump" type="button">점프</button>
+      </div>
+    </div>
+
+    <div id="menu" class="overlay" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+        <h2 id="menu-title">메뉴</h2>
+        <ul class="menu-keys">
+          <li><kbd>WASD</kbd>/<kbd>방향키</kbd> 이동</li>
+          <li><kbd>Space</kbd> 점프 (땅에서만)</li>
+          <li><kbd>E</kbd> 아이템 사용</li>
+          <li>모바일: 왼쪽 조이스틱 · 오른쪽 점프/아이템</li>
+        </ul>
+        <label class="check"><input id="opt-names" type="checkbox" checked> 닉네임 표시</label>
+        <label class="check"><input id="opt-lowfx" type="checkbox"> 효과 줄이기 (저사양)</label>
+        <p id="menu-stats" class="note mono"></p>
+        <div class="modal-actions">
+          <button id="menu-close" class="btn btn-primary" type="button">계속하기</button>
+          <button id="menu-leave" class="btn btn-danger" type="button">방 나가기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 결과 화면 ===================== -->
+  <section id="screen-results" class="screen" aria-label="결과">
+    <div class="results-card">
+      <p id="res-eyebrow" class="eyebrow">경기 종료</p>
+      <div class="winner">
+        <img id="res-winner-img" alt="" width="128" height="128">
+        <div>
+          <h2 id="res-title">우승</h2>
+          <p id="res-sub" class="res-sub"></p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="rank-table">
+          <thead><tr><th>순위</th><th>플레이어</th><th>생존 시간</th><th>상태</th></tr></thead>
+          <tbody id="res-body"></tbody>
+        </table>
+      </div>
+      <div class="results-actions">
+        <button id="btn-rematch" class="btn btn-primary" type="button">재경기</button>
+        <button id="btn-to-lobby" class="btn" type="button">대기실로 돌아가기</button>
+      </div>
+      <p id="res-note" class="note"></p>
+    </div>
+  </section>
+</div>
+
+<div id="net-banner" class="net-banner" hidden>네트워크 연결이 끊겼습니다. 다시 연결하는 중…</div>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<div id="fatal" class="overlay" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="fatal-title">
+    <h2 id="fatal-title">문제가 발생했어요</h2>
+    <p id="fatal-msg"></p>
+    <div class="modal-actions">
+      <button id="fatal-reload" class="btn btn-primary" type="button">새로고침</button>
+      <button id="fatal-close" class="btn" type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>window.__cdnErrors = [];</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js" onerror="window.__cdnErrors.push('Phaser')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" onerror="window.__cdnErrors.push('Firebase App')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" onerror="window.__cdnErrors.push('Firebase Auth')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" onerror="window.__cdnErrors.push('Firebase Database')"></script>
+<script src="game.js"></script>
+</body>
+</html>
